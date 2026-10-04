@@ -1,0 +1,111 @@
+import 'package:fhir_mapping/src/definition_resolver.dart';
+import 'package:fhir_mapping/src/mapping_variables.dart';
+import 'package:fhir_node/fhir_node.dart';
+import 'package:fhir_path/fhir_path.dart';
+
+/// FHIRPath host services for evaluating FHIRPath expressions: the mapping
+/// variables are the engine's constants.
+class FHIRPathHostServices extends IEvaluationContext {
+  @override
+  List<FhirNode> resolveConstant(
+    FHIRPathEngine? engine,
+    Object? appContext,
+    String? name,
+    bool beforeContext,
+    bool explicitConstant,
+  ) {
+    final vars = appContext is MappingVariables ? appContext : null;
+    final list = <FhirNode>[];
+    final res =
+        vars?.get(MappingVariableMode.INPUT, name) ??
+        vars?.get(MappingVariableMode.OUTPUT, name);
+    if (res != null) {
+      list.add(res.build());
+    }
+    return list;
+  }
+
+  @override
+  TypeDetails resolveConstantType(
+    FHIRPathEngine engine,
+    Object appContext,
+    String name,
+    bool explicitConstant,
+  ) {
+    if (appContext is! VariablesForProfiling) {
+      throw Exception(
+        "Internal Logic Error (wrong type '${appContext.runtimeType}' "
+        'in resolveConstantType)',
+      );
+    }
+    final vars = appContext;
+    final v = vars.get(null, name);
+    if (v == null) {
+      throw PathEngineException(
+        "Unknown variable '$name' from variables ${vars.summary()}",
+      );
+    }
+    return v.property.types;
+  }
+
+  @override
+  TypeDetails checkFunction(
+    FHIRPathEngine engine,
+    Object appContext,
+    String functionName,
+    TypeDetails focus,
+    List<TypeDetails> parameters,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  bool conformsToProfile(
+    FHIRPathEngine engine,
+    Object appContext,
+    FhirNode item,
+    String url,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  List<FhirNode> executeFunction(
+    FHIRPathEngine engine,
+    Object? appContext,
+    List<FhirNode> focus,
+    String? functionName,
+    List<List<FhirNode>> parameters,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  bool fpLog(String argument, List<FhirNode> focus) {
+    throw UnimplementedError();
+  }
+
+  @override
+  FunctionDetails resolveFunction(FHIRPathEngine engine, String functionName) {
+    throw UnimplementedError();
+  }
+
+  @override
+  FhirNode resolveReference(
+    FHIRPathEngine engine,
+    Object appContext,
+    String url,
+    FhirNode refContext,
+  ) {
+    throw UnimplementedError();
+  }
+
+  @override
+  FhirNode? resolveValueSet(
+    FHIRPathEngine engine,
+    Object? appContext,
+    String url,
+  ) {
+    throw UnimplementedError();
+  }
+}
