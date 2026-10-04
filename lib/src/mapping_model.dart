@@ -32,13 +32,6 @@ abstract class MappingModel<R extends FhirNode> extends ResourceModel<R> {
   /// this version, or a FHIRPath result).
   FhirNodeBuilder toBuilder(FhirNode node);
 
-  /// A builder for a resource or element from its JSON; [typeName] names
-  /// the type when the JSON is not a resource (no `resourceType`).
-  FhirNodeBuilder builderFromJson(
-    Map<String, dynamic> json, [
-    String? typeName,
-  ]);
-
   /// A quoted rule name as this version's StructureMap carries it. R4B keeps
   /// it as written; R5 and R6 strip hyphens (the R5 reference parser's
   /// `fixName`, `c.replace("-", "")`, StructureMapUtilities.parseRule).

@@ -271,10 +271,4 @@ class StubMappingModel extends MappingModel<JsonNode> {
     }
     return JsonNodeBuilder(node.fhirType, json);
   }
-
-  @override
-  FhirNodeBuilder builderFromJson(
-    Map<String, dynamic> json, [
-    String? typeName,
-  ]) => JsonNodeBuilder(typeName ?? json['resourceType'] as String, json);
 }
