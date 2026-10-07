@@ -118,8 +118,10 @@ class StructureMapParser<R extends FhirNode> {
         // The header's comment block is the description (the reference
         // parser: `result.setDescription(lexer.getAllComments())`, R4B and
         // R5 StructureMapUtilities.parse).
-        // Joined the way the reference lexer's getAllComments joins them.
-        final comments = lexer.comments.join('\r\n');
+        // Joined the way the reference lexer's getAllComments joins them:
+        // CommaSeparatedStringBuilder("\r\n").addAll → appendIfNotNull,
+        // which drops an empty comment line (a bare `//`).
+        final comments = lexer.comments.where((c) => c.isNotEmpty).join('\r\n');
         lexer.comments.clear();
         if (comments.isNotEmpty) result['description'] = comments;
         result['status'] = 'draft';
@@ -326,7 +328,12 @@ class StructureMapParser<R extends FhirNode> {
       if (lexer.hasToken(';')) lexer.token(';');
     }
 
-    // Append any post-rule comments to documentation
+    // Append any post-rule comments to documentation. This is what the
+    // published tutorial examples show (step6b: a comment after the rule's
+    // `;` is its documentation; step12: the next rule's leading comment is
+    // appended with '\n'), measured 2026-10-06 over the 58 published
+    // examples; the current reference parser takes nothing here, and maps
+    // compiled by it (the ahdis CDA corpus) differ in documentation only.
     if (lexer.hasComments()) {
       final postComment = lexer.getFirstComment();
       documentation =
@@ -510,7 +517,11 @@ class StructureMapParser<R extends FhirNode> {
       if (typeMode != null) 'typeMode': typeMode,
       if (documentation != null) 'documentation': documentation,
       'input': inputs,
-      if (rules.isNotEmpty) 'rule': rules,
+      // Always written: StructureMap.group.rule is 1..* in R4B, so the
+      // model's fromJson reads the list unconditionally, and a group with
+      // no rules (`group Any(source src, target tgt) {}`, the ahdis
+      // datatypes maps, 2026-10-06) failed to build on the missing key.
+      'rule': rules,
     };
   }
 
