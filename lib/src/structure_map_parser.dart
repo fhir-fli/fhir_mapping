@@ -108,66 +108,74 @@ class StructureMapParser<R extends FhirNode> {
 
       final result = <String, dynamic>{'resourceType': 'StructureMap'};
 
-      // Handle both old and new format
-      if (lexer.hasToken('map')) {
-        // Old format: map "url" = "name"
-        lexer.token('map');
-        result['url'] = lexer.readConstant('url');
-        lexer.token('=');
-        result['name'] = lexer.readConstant('name');
-        // The header's comment block is the description (the reference
-        // parser: `result.setDescription(lexer.getAllComments())`, R4B and
-        // R5 StructureMapUtilities.parse).
-        // Joined the way the reference lexer's getAllComments joins them:
-        // CommaSeparatedStringBuilder("\r\n").addAll → appendIfNotNull,
-        // which drops an empty comment line (a bare `//`).
-        final comments = lexer.comments.where((c) => c.isNotEmpty).join('\r\n');
-        lexer.comments.clear();
-        if (comments.isNotEmpty) result['description'] = comments;
-        result['status'] = 'draft';
-      }
+      // Handle both old and new format. The `map` line and the `///`
+      // metadata lines come in either order: the published tutorial maps
+      // write `map` first, the SDOHCC maps (sdoh-clinicalcare) write the
+      // metadata first (measured 2026-10-07: both SDOHCC maps failed at
+      // their `map` line, which came after the metadata).
+      while (lexer.hasToken('map') || lexer.hasToken('///')) {
+        // Handle both old and new format
+        if (lexer.hasToken('map')) {
+          // Old format: map "url" = "name"
+          lexer.token('map');
+          result['url'] = lexer.readConstant('url');
+          lexer.token('=');
+          result['name'] = lexer.readConstant('name');
+          // The header's comment block is the description (the reference
+          // parser: `result.setDescription(lexer.getAllComments())`, R4B and
+          // R5 StructureMapUtilities.parse).
+          // Joined the way the reference lexer's getAllComments joins them:
+          // CommaSeparatedStringBuilder("\r\n").addAll → appendIfNotNull,
+          // which drops an empty comment line (a bare `//`).
+          final comments = lexer.comments
+              .where((c) => c.isNotEmpty)
+              .join('\r\n');
+          lexer.comments.clear();
+          if (comments.isNotEmpty) result['description'] = comments;
+          result['status'] = 'draft';
+        }
 
-      // New format metadata: /// url = "value"
-      // Must be processed BEFORE consuming comments
-      while (lexer.hasToken('///')) {
-        lexer.next();
-        final fid = lexer.takeDottedToken();
-        lexer.token('=');
-        switch (fid) {
-          case 'url':
-            result['url'] = lexer.readConstant('url');
-          case 'name':
-            result['name'] = lexer.readConstant('name');
-          case 'title':
-            result['title'] = lexer.readConstant('title');
-          case 'description':
-            result['description'] = lexer.readConstant('description');
-          case 'status':
-            // The reference reads a quoted constant only. Published maps
-            // write `/// status = draft` bare (sdoh-clinicalcare's
-            // SDOHCC-StructureMapHungerVitalSign, test step14), and their
-            // published JSON carries that status, so a bare token is
-            // accepted too.
-            result['status'] =
-                lexer.isStringConstant()
-                    ? lexer.readConstant('status')
-                    : lexer.take();
-          case 'experimental':
-            if (lexer.isStringConstant()) {
-              result['experimental'] =
-                  lexer.readConstant('experimental') == 'true';
-            } else if (lexer.hasToken('true')) {
-              lexer.token('true');
-              result['experimental'] = true;
-            } else {
-              lexer.token('false');
-              result['experimental'] = false;
-            }
-          default:
-            lexer.readConstant('nothing'); // consume unknown metadata
+        // New format metadata: /// url = "value"
+        // Must be processed BEFORE consuming comments
+        if (lexer.hasToken('///')) {
+          lexer.next();
+          final fid = lexer.takeDottedToken();
+          lexer.token('=');
+          switch (fid) {
+            case 'url':
+              result['url'] = lexer.readConstant('url');
+            case 'name':
+              result['name'] = lexer.readConstant('name');
+            case 'title':
+              result['title'] = lexer.readConstant('title');
+            case 'description':
+              result['description'] = lexer.readConstant('description');
+            case 'status':
+              // The reference reads a quoted constant only. Published maps
+              // write `/// status = draft` bare (sdoh-clinicalcare's
+              // SDOHCC-StructureMapHungerVitalSign, test step14), and their
+              // published JSON carries that status, so a bare token is
+              // accepted too.
+              result['status'] =
+                  lexer.isStringConstant()
+                      ? lexer.readConstant('status')
+                      : lexer.take();
+            case 'experimental':
+              if (lexer.isStringConstant()) {
+                result['experimental'] =
+                    lexer.readConstant('experimental') == 'true';
+              } else if (lexer.hasToken('true')) {
+                lexer.token('true');
+                result['experimental'] = true;
+              } else {
+                lexer.token('false');
+                result['experimental'] = false;
+              }
+            default:
+              lexer.readConstant('nothing'); // consume unknown metadata
+          }
         }
       }
-
       // Set defaults if not already set
       if (result['id'] == null && result['name'] is String) {
         result['id'] = (result['name'] as String).replaceAll(' ', '');
