@@ -1,3 +1,12 @@
+## 0.13.1
+
+- **The `///` metadata lines may come before the `map` line** (#2), as the
+  SDOHCC implementation guide's maps write them; the parser threw on them.
+- **The header description drops empty comment lines, and a group always
+  writes its rule list** (#1). R4B `StructureMap.group.rule` is 1..*; a
+  group with no rules wrote none. Measured against the 73 published
+  map/StructureMap pairs restored in fhir_r4_mapping's tests.
+
 ## 0.13.0
 
 - First release. The parser (`StructureMapParser`), the engine

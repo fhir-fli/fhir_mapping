@@ -1,6 +1,6 @@
 name: fhir_mapping
 description: FHIR Mapping Language parser and StructureMap transform engine for every FHIR version, over the fhir_node reflection contract and a per-version builder model.
-version: 0.13.0
+version: 0.13.1
 homepage: https://www.fhirfli.dev/
 repository: https://github.com/fhir-fli/fhir_mapping
 issue_tracker: https://github.com/fhir-fli/fhir_mapping/issues
